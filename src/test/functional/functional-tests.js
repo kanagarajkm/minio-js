@@ -682,6 +682,7 @@ describe('functional tests', function() {
       client.removeObject(bucketName, _65mbObjectName, done)
     })
   })
+
   describe('fGetObject-resume', () => {
     var localFile = `${tmpDir}/${_5mbObjectName}`
     var etag = ''
