@@ -228,800 +228,800 @@ describe('functional tests', function() {
         .catch(done)
     })
   })
-  describe('tests for putObject getObject removeObject with multipath', function() {
-    step(`putObject(bucketName, objectName, stream)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}, stream:100Kib_`, done => {
-      client.putObject(bucketName, _MultiPath100kbObjectBufferName, _100kb)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}_`, done => {
-      var hash = crypto.createHash('md5')
-      client.getObject(bucketName, _MultiPath100kbObjectBufferName, (e, stream) => {
-        if (e) return done(e)
-        stream.on('data', data => hash.update(data))
-        stream.on('error', done)
-        stream.on('end', () => {
-          if (hash.digest('hex') === _100kbmd5) return done()
-          done(new Error('content mismatch'))
-        })
-      })
-    })
-
-    step(`removeObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}_`, done => {
-      client.removeObject(bucketName, _MultiPath100kbObjectBufferName)
-        .then(() => done())
-        .catch(done)
-    })
-
-  })
-  describe('tests for putObject copyObject getObject getPartialObject statObject removeObject', function() {
-    var tmpFileUpload = `${tmpDir}/${_100kbObjectName}`
-    step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUpload}_`, done => {
-      fs.writeFileSync(tmpFileUpload, _100kb)
-      client.fPutObject(bucketName, _100kbObjectName, tmpFileUpload,done)
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      client.statObject(bucketName, _100kbObjectName, (e, stat) => {
-        if (e) return done(e)
-        // As metadata is not provided and there is no file extension,
-        // we default to 'application/octet-stream' as per `probeContentType` function
-        if (stat.metaData && stat.metaData['content-type'] !== 'application/octet-stream') {
-          return done(new Error('content-type mismatch'))
-        }
-        done()
-      })
-    })
-
-    var tmpFileUploadWithExt = `${tmpDir}/${_100kbObjectName}.txt`
-    step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUploadWithExt}, metaData:${metaData}_`, done => {
-      fs.writeFileSync(tmpFileUploadWithExt, _100kb)
-      client.fPutObject(bucketName, _100kbObjectName, tmpFileUploadWithExt, metaData, done)
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      client.statObject(bucketName, _100kbObjectName, (e, stat) => {
-        if (e) return done(e)
-        // As metadata is provided, even though we have an extension,
-        // the `content-type` should be equal what was declared on the metadata
-        if (stat.metaData && stat.metaData['content-type'] !== 'text/html') {
-          return done(new Error('content-type mismatch'))
-        } else if (!stat.metaData) {
-          return done(new Error('no metadata present'))
-        }
-        done()
-      })
-    })
-
-    step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUploadWithExt}_`, done => {
-      fs.writeFileSync(tmpFileUploadWithExt, _100kb)
-      client.fPutObject(bucketName, _100kbObjectName, tmpFileUploadWithExt, done)
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      client.statObject(bucketName, _100kbObjectName, (e, stat) => {
-        if (e) return done(e)
-        // As metadata is not provided but we have a file extension,
-        // we need to infer `content-type` from the file extension
-        if (stat.metaData && stat.metaData['content-type'] !== 'text/plain') return done(new Error('content-type mismatch'))
-        done()
-      })
-    })
-
-    step(`putObject(bucketName, objectName, stream, size, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream:100kb, size:${_100kb.length}, metaData:${metaData}_`, done => {
-      var stream = readableStream(_100kb)
-      client.putObject(bucketName, _100kbObjectName, stream, _100kb.length, metaData, done)
-    })
-
-    step(`putObject(bucketName, objectName, stream, size, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream:100kb, size:${_100kb.length}_`, done => {
-      var stream = readableStream(_100kb)
-      client.putObject(bucketName, _100kbObjectName, stream, _100kb.length, done)
-    })
-
-    step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      var hash = crypto.createHash('md5')
-      client.getObject(bucketName, _100kbObjectName, (e, stream) => {
-        if (e) return done(e)
-        stream.on('data', data => hash.update(data))
-        stream.on('error', done)
-        stream.on('end', () => {
-          if (hash.digest('hex') === _100kbmd5) return done()
-          done(new Error('content mismatch'))
-        })
-      })
-    })
-
-    step(`putObject(bucketName, objectName, stream, callback)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, stream:100kb_`, done => {
-      client.putObject(bucketName, _100kbObjectBufferName, _100kb, '', done)
-    })
-
-    step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}_`, done => {
-      var hash = crypto.createHash('md5')
-      client.getObject(bucketName, _100kbObjectBufferName, (e, stream) => {
-        if (e) return done(e)
-        stream.on('data', data => hash.update(data))
-        stream.on('error', done)
-        stream.on('end', () => {
-          if (hash.digest('hex') === _100kbmd5) return done()
-          done(new Error('content mismatch'))
-        })
-      })
-    })
-
-    step(`putObject(bucketName, objectName, stream, metaData)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, stream:100kb_, metaData:{}`, done => {
-      client.putObject(bucketName, _100kbObjectBufferName, _100kb, {})
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:0, length=1024_`, done => {
-      client.getPartialObject(bucketName, _100kbObjectBufferName, 0, 1024)
-        .then(stream => {
-          stream.on('data', function() {})
-          stream.on('end', done)
-        })
-        .catch(done)
-    })
-
-    step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:1024, length=1024_`, done => {
-      var expectedHash = crypto.createHash('md5').update(_100kb.slice(1024,2048)).digest('hex')
-      var hash = crypto.createHash('md5')
-      client.getPartialObject(bucketName, _100kbObjectBufferName, 1024, 1024)
-        .then(stream => {
-          stream.on('data', data => hash.update(data))
-          stream.on('end', () => {
-            if (hash.digest('hex') === expectedHash) return done()
-            done(new Error('content mismatch'))
-          })
-        })
-        .catch(done)
-    })
-
-    step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:1024`, done => {
-      var hash = crypto.createHash('md5')
-      client.getPartialObject(bucketName, _100kbObjectBufferName, 1024)
-        .then(stream => {
-          stream.on('data', data => hash.update(data))
-          stream.on('end', () => {
-            if (hash.digest('hex') === _100kb1kboffsetmd5) return done()
-            done(new Error('content mismatch'))
-          })
-        })
-        .catch(done)
-    })
-
-    step(`getObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}_`, done => {
-      client.getObject(bucketName, _100kbObjectBufferName)
-        .then(stream => {
-          stream.on('data', function() {})
-          stream.on('end', done)
-        })
-        .catch(done)
-    })
-
-    step(`putObject(bucketName, objectName, stream, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
-      var stream = readableStream(_65mb)
-      client.putObject(bucketName, _65mbObjectName, stream, () => {
-        setTimeout(() => {
-          if (Object.values(httpAgent.sockets).length === 0) return done()
-          done(new Error('http request did not release network socket'))
-        }, 0)
-      })
-    })
-
-    step(`getObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
-      var hash = crypto.createHash('md5')
-      client.getObject(bucketName, _65mbObjectName, (e, stream) => {
-        if (e) return done(e)
-        stream.on('data', data => hash.update(data))
-        stream.on('error', done)
-        stream.on('end', () => {
-          if (hash.digest('hex') === _65mbmd5) return done()
-          done(new Error('content mismatch'))
-        })
-      })
-    })
-
-    step(`getObject(bucketName, objectName, cb)_bucketName:${bucketName} non-existent object`, done => {
-      client.getObject(bucketName, 'an-object-that-does-not-exist', (e, stream) => {
-        if (stream) return done(new Error("on errors the stream object should not exist"))
-        if (!e) return done(new Error("expected an error object"))
-        if (e.code !== 'NoSuchKey') return done(new Error("expected NoSuchKey error"))
-        done()
-      })
-    })
-
-    step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}, offset:0, length:100*1024_`, done => {
-      var hash = crypto.createHash('md5')
-      var expectedHash = crypto.createHash('md5').update(_65mb.slice(0,100*1024)).digest('hex')
-      client.getPartialObject(bucketName, _65mbObjectName, 0, 100*1024, (e, stream) => {
-        if (e) return done(e)
-        stream.on('data', data => hash.update(data))
-        stream.on('error', done)
-        stream.on('end', () => {
-          if (hash.digest('hex') === expectedHash) return done()
-          done(new Error('content mismatch'))
-        })
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, cb)_bucketName:${bucketName}, objectName:${_65mbObjectNameCopy}, srcObject:/${bucketName}/${_65mbObjectName}_`, done => {
-      client.copyObject(bucketName, _65mbObjectNameCopy, "/" + bucketName + "/" + _65mbObjectName, (e) => {
-        if (e) return done(e)
-        done()
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject)_bucketName:${bucketName}, objectName:${_65mbObjectNameCopy}, srcObject:/${bucketName}/${_65mbObjectName}_`, done => {
-      client.copyObject(bucketName, _65mbObjectNameCopy, "/" + bucketName + "/" + _65mbObjectName)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
-      client.statObject(bucketName, _65mbObjectName, (e, stat) => {
-        if (e) return done(e)
-        if (stat.size !== _65mb.length) return done(new Error('size mismatch'))
-        done()
-      })
-    })
-
-    step(`statObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
-      client.statObject(bucketName, _65mbObjectName)
-        .then(stat => {
-          if (stat.size !== _65mb.length)
-            return done(new Error('size mismatch'))
-        })
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`removeObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      client.removeObject(bucketName, _100kbObjectName)
-        .then(function() {
-          async.map([_100kbObjectBufferName, _65mbObjectName, _65mbObjectNameCopy], (objectName, cb) => client.removeObject(bucketName, objectName, cb), done)
-        })
-        .catch(done)
-    })
-
-  })
-
-  describe('tests for copyObject statObject', function() {
-    var etag
-    var modifiedDate
-    step(`putObject(bucketName, objectName, stream, metaData, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream: 100kb, metaData:${metaData}_`, done => {
-      client.putObject(bucketName, _100kbObjectName, _100kb, metaData, done)
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}_`, done => {
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, (e) => {
-        if (e) return done(e)
-        done()
-      })
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
-      client.statObject(bucketName, _100kbObjectName, (e, stat) => {
-        if (e) return done(e)
-        if (stat.size !== _100kb.length) return done(new Error('size mismatch'))
-        assert.equal(stat.metaData['content-type'], metaData['Content-Type'])
-        assert.equal(stat.metaData['Testing'], metaData['Testing'])
-        assert.equal(stat.metaData['randomstuff'], metaData['randomstuff'])
-        etag = stat.etag
-        modifiedDate = stat.modifiedDate
-        done()
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:ExceptIncorrectEtag_`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setMatchETagExcept('TestEtag')
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
-        if (e) return done(e)
-        done()
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:ExceptCorrectEtag_`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setMatchETagExcept(etag)
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
-        .then(() => {
-          done(new Error("CopyObject should have failed."))
-        })
-        .catch(() => done())
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:MatchCorrectEtag_`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setMatchETag(etag)
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
-        if (e) return done(e)
-        done()
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:MatchIncorrectEtag_`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setMatchETag('TestETag')
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
-        .then(() => {
-          done(new Error("CopyObject should have failed."))
-        })
-        .catch(() => done())
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:Unmodified since ${modifiedDate}`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setUnmodified(new Date(modifiedDate))
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
-        if (e) return done(e)
-        done()
-      })
-    })
-
-    step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:Unmodified since 2010-03-26T12:00:00Z_`, done => {
-      var conds = new minio.CopyConditions()
-      conds.setUnmodified(new Date("2010-03-26T12:00:00Z"))
-      client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
-        .then(() => {
-          done(new Error("CopyObject should have failed."))
-        })
-        .catch(() => done())
-    })
-
-    step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}_`, done => {
-      client.statObject(bucketName, _100kbObjectNameCopy, (e, stat) => {
-        if (e) return done(e)
-        if (stat.size !== _100kb.length) return done(new Error('size mismatch'))
-        done()
-      })
-    })
-
-    step(`removeObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}_`, done => {
-      async.map([_100kbObjectName, _100kbObjectNameCopy], (objectName, cb) => client.removeObject(bucketName, objectName, cb), done)
-    })
-
-  })
-
-  describe('listIncompleteUploads removeIncompleteUpload', () => {
-    step(`initiateNewMultipartUpload(bucketName, objectName, metaData, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}, metaData:${metaData}`, done => {
-      client.initiateNewMultipartUpload(bucketName, _65mbObjectName, metaData, done)
-    })
-    step(`listIncompleteUploads(bucketName, prefix, recursive)_bucketName:${bucketName}, prefix:${_65mbObjectName}, recursive: true_`, function(done) {
-      // MinIO's ListIncompleteUploads returns an empty list, so skip this on non-AWS.
-      // See: https://github.com/minio/minio/commit/75c43bfb6c4a2ace
-      if (!client.host.includes('s3.amazonaws.com')) {
-        this.skip()
-      }
-
-      var found = false
-      client.listIncompleteUploads(bucketName, _65mbObjectName, true)
-        .on('error', e => done(e))
-        .on('data', data => {
-          if (data.key === _65mbObjectName) found = true
-        })
-        .on('end', () => {
-          if (found) return done()
-          done(new Error(`${_65mbObjectName} not found during listIncompleteUploads`))
-        })
-    })
-    step(`listIncompleteUploads(bucketName, prefix, recursive)_bucketName:${bucketName}, recursive: true_`, function(done) {
-      // MinIO's ListIncompleteUploads returns an empty list, so skip this on non-AWS.
-      // See: https://github.com/minio/minio/commit/75c43bfb6c4a2ace
-      if (!client.host.includes('s3.amazonaws.com')) {
-        this.skip()
-      }
-
-      var found = false
-      client.listIncompleteUploads(bucketName, "", true)
-        .on('error', e => done(e))
-        .on('data', data => {
-          if (data.key === _65mbObjectName) found = true
-        })
-        .on('end', () => {
-          if (found) return done()
-          done(new Error(`${_65mbObjectName} not found during listIncompleteUploads`))
-        })
-    })
-    step(`removeIncompleteUploads(bucketName, prefix)_bucketName:${bucketName}, prefix:${_65mbObjectName}_`, done => {
-      client.removeIncompleteUpload(bucketName, _65mbObjectName)
-        .then(done)
-        .catch(done)
-    })
-  })
-
-  describe('fPutObject fGetObject', function() {
-    var tmpFileUpload = `${tmpDir}/${_65mbObjectName}`
-    var tmpFileDownload = `${tmpDir}/${_65mbObjectName}.download`
-
-    step(`fPutObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}_`, done => {
-      fs.writeFileSync(tmpFileUpload, _65mb)
-      client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload, () => {
-        setTimeout(() => {
-          if (Object.values(httpAgent.sockets).length === 0) return done()
-          done(new Error('http request did not release network socket'))
-        }, 0)
-      })
-    })
-
-    step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}, metaData: ${metaData}_`, done => client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload, metaData, done))
-    step(`fGetObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileDownload}_`, done => {
-      client.fGetObject(bucketName, _65mbObjectName, tmpFileDownload)
-        .then(() => {
-          var md5sum = crypto.createHash('md5').update(fs.readFileSync(tmpFileDownload)).digest('hex')
-          if (md5sum === _65mbmd5) return done()
-          return done(new Error('md5sum mismatch'))
-        })
-        .catch(done)
-    })
-
-    step(`removeObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
-      fs.unlinkSync(tmpFileDownload)
-      client.removeObject(bucketName, _65mbObjectName)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`fPutObject(bucketName, objectName, filePath, metaData)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}_`, done => {
-      client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`fGetObject(bucketName, objectName, filePath)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileDownload}_`, done => {
-      client.fGetObject(bucketName, _65mbObjectName, tmpFileDownload)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`removeObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, (done) => {
-      fs.unlinkSync(tmpFileUpload)
-      fs.unlinkSync(tmpFileDownload)
-      client.removeObject(bucketName, _65mbObjectName, done)
-    })
-  })
-
-  describe('fGetObject-resume', () => {
-    var localFile = `${tmpDir}/${_5mbObjectName}`
-    var etag = ''
-    step(`putObject(bucketName, objectName, stream, metaData, cb)_bucketName:${bucketName}, objectName:${_5mbObjectName}, stream:5mb_`, done => {
-      var stream = readableStream(_5mb)
-      client.putObject(bucketName, _5mbObjectName, stream, _5mb.length, {})
-        .then((resp) => {
-          etag = resp
-          done()
-        })
-        .catch(done)
-    })
-    step(`fGetObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_5mbObjectName}, filePath:${localFile}`, done => {
-      var bufPart = Buffer.alloc(_100kb.length)
-      _5mb.copy(bufPart, 0, 0, _100kb.length)
-      var tmpFile = `${tmpDir}/${_5mbObjectName}.${etag}.part.minio`
-      // create a partial file
-      fs.writeFileSync(tmpFile, bufPart)
-      client.fGetObject(bucketName, _5mbObjectName, localFile)
-        .then(() => {
-          var md5sum = crypto.createHash('md5').update(fs.readFileSync(localFile)).digest('hex')
-          if (md5sum === _5mbmd5) return done()
-          return done(new Error('md5sum mismatch'))
-        })
-        .catch(done)
-    })
-    step(`removeObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_5mbObjectName}_`, done => {
-      fs.unlinkSync(localFile)
-      client.removeObject(bucketName, _5mbObjectName, done)
-    })
-  })
-
-  describe('bucket policy', () => {
-    let policy = `{"Version":"2012-10-17","Statement":[{"Action":["s3:GetBucketLocation","s3:ListBucket"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::${bucketName}"],"Sid":""},{"Action":["s3:GetObject"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::${bucketName}/*"],"Sid":""}]}`
-
-    step(`setBucketPolicy(bucketName, bucketPolicy, cb)_bucketName:${bucketName}, bucketPolicy:${policy}_`, done => {
-      client.setBucketPolicy(bucketName, policy, err => {
-        if (err && err.code == 'NotImplemented') return done()
-        if (err) return done(err)
-        done()
-      })
-    })
-
-    step(`getBucketPolicy(bucketName, cb)_bucketName:${bucketName}_`, done => {
-      client.getBucketPolicy(bucketName, (err, response) => {
-        if (err && err.code == 'NotImplemented') return done()
-        if (err) return done(err)
-        if (!response) {
-          return done(new Error(`policy is empty`))
-        }
-        done()
-      })
-    })
-  })
-
-  describe('presigned operations', () => {
-    step(`presignedPutObject(bucketName, objectName, expires, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires: 1000_`, done => {
-      client.presignedPutObject(bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'PUT'
-        options.headers = {
-          'content-length': _1byte.length
-        }
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          response.on('error', e => done(e))
-          response.on('end', () => done())
-          response.on('data', () => {})
-        })
-        request.on('error', e => done(e))
-        request.write(_1byte)
-        request.end()
-      })
-    })
-
-    step(`presignedPutObject(bucketName, objectName, expires)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:-123_`, done => {
-      // negative values should trigger an error
-      client.presignedPutObject(bucketName, _1byteObjectName, -123)
-        .then(() => {
-          done(new Error('negative values should trigger an error'))
-        })
-        .catch(() => done())
-    })
-
-    step(`presignedPutObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_1byteObjectName}_`, done => {
-      // Putting the same object should not cause any error
-      client.presignedPutObject(bucketName, _1byteObjectName)
-        .then(() => done())
-        .catch(done)
-    })
-
-    step(`presignedGetObject(bucketName, objectName, expires, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
-      client.presignedGetObject(bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          var error = null
-          response.on('error', e => done(e))
-          response.on('end', () => done(error))
-          response.on('data', (data) => {
-            if (data.toString() !== _1byte.toString()) {
-              error = new Error('content mismatch')
-            }
-          })
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:GET, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
-      client.presignedUrl('GET', bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          var error = null
-          response.on('error', e => done(e))
-          response.on('end', () => done(error))
-          response.on('data', (data) => {
-            if (data.toString() !== _1byte.toString()) {
-              error = new Error('content mismatch')
-            }
-          })
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:GET, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:86400, requestDate:StartOfDay_`, done => {
-      var requestDate = new Date()
-      requestDate.setHours(0,0,0,0)
-      client.presignedUrl('GET', bucketName, _1byteObjectName, 86400, requestDate, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          var error = null
-          response.on('error', e => done(e))
-          response.on('end', () => done(error))
-          response.on('data', (data) => {
-            if (data.toString() !== _1byte.toString()) {
-              error = new Error('content mismatch')
-            }
-          })
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step(`presignedGetObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}_`, done => {
-      client.presignedGetObject(bucketName, _1byteObjectName, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          var error = null
-          response.on('error', e => done(e))
-          response.on('end', () => done(error))
-          response.on('data', (data) => {
-            if (data.toString() !== _1byte.toString()) {
-              error = new Error('content mismatch')
-            }
-          })
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step(`presignedGetObject(bucketName, objectName, expires)_bucketName:${bucketName}, objectName:this.does.not.exist, expires:2938_`, done => {
-      client.presignedGetObject(bucketName, 'this.does.not.exist', 2938)
-        .then(assert.fail)
-        .catch(() => done())
-    })
-
-    step(`presignedGetObject(bucketName, objectName, expires, respHeaders, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
-      var respHeaders = {
-        'response-content-type': 'text/html',
-        'response-content-language': 'en',
-        'response-expires': 'Sun, 07 Jun 2020 16:07:58 GMT',
-        'response-cache-control': 'No-cache',
-        'response-content-disposition': 'attachment; filename=testing.txt',
-        'response-content-encoding': 'gzip'
-      }
-      client.presignedGetObject(bucketName, _1byteObjectName, 1000, respHeaders, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on get : ${response.statusCode}`))
-          if (respHeaders['response-content-type'] != response.headers['content-type']) {
-            return done(new Error(`content-type header mismatch`))
-          }
-          if (respHeaders['response-content-language'] != response.headers['content-language']) {
-            return done(new Error(`content-language header mismatch`))
-          }
-          if (respHeaders['response-expires'] != response.headers['expires']) {
-            return done(new Error(`expires header mismatch`))
-          }
-          if (respHeaders['response-cache-control'] != response.headers['cache-control']) {
-            return done(new Error(`cache-control header mismatch`))
-          }
-          if (respHeaders['response-content-disposition'] != response.headers['content-disposition']) {
-            return done(new Error(`content-disposition header mismatch`))
-          }
-          if (respHeaders['response-content-encoding'] != response.headers['content-encoding']) {
-            return done(new Error(`content-encoding header mismatch`))
-          }
-          response.on('data', () => {})
-          done()
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step(`presignedGetObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:86400, requestDate:StartOfDay_`, done => {
-      var requestDate = new Date()
-      requestDate.setHours(0,0,0,0)
-      client.presignedGetObject(bucketName, _1byteObjectName, 86400, {}, requestDate, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          var error = null
-          response.on('error', e => done(e))
-          response.on('end', () => done(error))
-          response.on('data', (data) => {
-            if (data.toString() !== _1byte.toString()) {
-              error = new Error('content mismatch')
-            }
-          })
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-
-    step('presignedPostPolicy(postPolicy, cb)_postPolicy:expiresin10days_', done => {
-      var policy = client.newPostPolicy()
-      policy.setKey(_1byteObjectName)
-      policy.setBucket(bucketName)
-      var expires = new Date
-      expires.setSeconds(24 * 60 * 60 * 10)
-      policy.setExpires(expires)
-
-      client.presignedPostPolicy(policy, (e, data) => {
-        if (e) return done(e)
-        var req = superagent.post(data.postURL)
-        _.each(data.formData, (value, key) => req.field(key, value))
-        req.attach('file', Buffer.from([_1byte]), 'test')
-        req.end(function(e) {
-          if (e) return done(e)
-          done()
-        })
-        req.on('error', e => done(e))
-      })
-    })
-
-    step('presignedPostPolicy(postPolicy)_postPolicy: null_', done => {
-      client.presignedPostPolicy(null)
-        .then(() => {
-          done(new Error('null policy should fail'))
-        })
-        .catch(() => done())
-    })
-
-    step(`presignedUrl(httpMethod, bucketName, objectName, expires, reqParams, cb)_httpMethod:GET, bucketName:${bucketName}, expires:1000_`, done => {
-      client.presignedUrl('GET', bucketName, '', 1000, {'prefix': 'data', 'max-keys': 1000}, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'GET'
-        options.headers = {
-        }
-        var str = ''
-        if (options.protocol === 'https:') transport = https
-        var callback = function (response) {
-          if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
-          response.on('error', e => done(e))
-          response.on('end', function () {
-            if (!str.match(`<Key>${_1byteObjectName}</Key>`)) {
-              return done(new Error('Listed object does not match the object in the bucket!'))
-            }
-            done()
-          })
-          response.on('data', function (chunk) {
-            str += chunk
-          })
-        }
-        var request = transport.request(options, callback)
-        request.end()
-      })
-    })
-
-    step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:DELETE, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
-      client.presignedUrl('DELETE', bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
-        if (e) return done(e)
-        var transport = http
-        var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
-        options.method = 'DELETE'
-        options.headers = {
-        }
-        if (options.protocol === 'https:') transport = https
-        var request = transport.request(options, (response) => {
-          if (response.statusCode !== 204) return done(new Error(`error on put : ${response.statusCode}`))
-          response.on('error', e => done(e))
-          response.on('end', () => done())
-          response.on('data', () => {})
-        })
-        request.on('error', e => done(e))
-        request.end()
-      })
-    })
-  })
+  // describe('tests for putObject getObject removeObject with multipath', function() {
+  //   step(`putObject(bucketName, objectName, stream)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}, stream:100Kib_`, done => {
+  //     client.putObject(bucketName, _MultiPath100kbObjectBufferName, _100kb)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}_`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     client.getObject(bucketName, _MultiPath100kbObjectBufferName, (e, stream) => {
+  //       if (e) return done(e)
+  //       stream.on('data', data => hash.update(data))
+  //       stream.on('error', done)
+  //       stream.on('end', () => {
+  //         if (hash.digest('hex') === _100kbmd5) return done()
+  //         done(new Error('content mismatch'))
+  //       })
+  //     })
+  //   })
+
+  //   step(`removeObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_MultiPath100kbObjectBufferName}_`, done => {
+  //     client.removeObject(bucketName, _MultiPath100kbObjectBufferName)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  // })
+  // describe('tests for putObject copyObject getObject getPartialObject statObject removeObject', function() {
+  //   var tmpFileUpload = `${tmpDir}/${_100kbObjectName}`
+  //   step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUpload}_`, done => {
+  //     fs.writeFileSync(tmpFileUpload, _100kb)
+  //     client.fPutObject(bucketName, _100kbObjectName, tmpFileUpload,done)
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     client.statObject(bucketName, _100kbObjectName, (e, stat) => {
+  //       if (e) return done(e)
+  //       // As metadata is not provided and there is no file extension,
+  //       // we default to 'application/octet-stream' as per `probeContentType` function
+  //       if (stat.metaData && stat.metaData['content-type'] !== 'application/octet-stream') {
+  //         return done(new Error('content-type mismatch'))
+  //       }
+  //       done()
+  //     })
+  //   })
+
+  //   var tmpFileUploadWithExt = `${tmpDir}/${_100kbObjectName}.txt`
+  //   step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUploadWithExt}, metaData:${metaData}_`, done => {
+  //     fs.writeFileSync(tmpFileUploadWithExt, _100kb)
+  //     client.fPutObject(bucketName, _100kbObjectName, tmpFileUploadWithExt, metaData, done)
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     client.statObject(bucketName, _100kbObjectName, (e, stat) => {
+  //       if (e) return done(e)
+  //       // As metadata is provided, even though we have an extension,
+  //       // the `content-type` should be equal what was declared on the metadata
+  //       if (stat.metaData && stat.metaData['content-type'] !== 'text/html') {
+  //         return done(new Error('content-type mismatch'))
+  //       } else if (!stat.metaData) {
+  //         return done(new Error('no metadata present'))
+  //       }
+  //       done()
+  //     })
+  //   })
+
+  //   step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, filePath: ${tmpFileUploadWithExt}_`, done => {
+  //     fs.writeFileSync(tmpFileUploadWithExt, _100kb)
+  //     client.fPutObject(bucketName, _100kbObjectName, tmpFileUploadWithExt, done)
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     client.statObject(bucketName, _100kbObjectName, (e, stat) => {
+  //       if (e) return done(e)
+  //       // As metadata is not provided but we have a file extension,
+  //       // we need to infer `content-type` from the file extension
+  //       if (stat.metaData && stat.metaData['content-type'] !== 'text/plain') return done(new Error('content-type mismatch'))
+  //       done()
+  //     })
+  //   })
+
+  //   step(`putObject(bucketName, objectName, stream, size, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream:100kb, size:${_100kb.length}, metaData:${metaData}_`, done => {
+  //     var stream = readableStream(_100kb)
+  //     client.putObject(bucketName, _100kbObjectName, stream, _100kb.length, metaData, done)
+  //   })
+
+  //   step(`putObject(bucketName, objectName, stream, size, metaData, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream:100kb, size:${_100kb.length}_`, done => {
+  //     var stream = readableStream(_100kb)
+  //     client.putObject(bucketName, _100kbObjectName, stream, _100kb.length, done)
+  //   })
+
+  //   step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     client.getObject(bucketName, _100kbObjectName, (e, stream) => {
+  //       if (e) return done(e)
+  //       stream.on('data', data => hash.update(data))
+  //       stream.on('error', done)
+  //       stream.on('end', () => {
+  //         if (hash.digest('hex') === _100kbmd5) return done()
+  //         done(new Error('content mismatch'))
+  //       })
+  //     })
+  //   })
+
+  //   step(`putObject(bucketName, objectName, stream, callback)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, stream:100kb_`, done => {
+  //     client.putObject(bucketName, _100kbObjectBufferName, _100kb, '', done)
+  //   })
+
+  //   step(`getObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}_`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     client.getObject(bucketName, _100kbObjectBufferName, (e, stream) => {
+  //       if (e) return done(e)
+  //       stream.on('data', data => hash.update(data))
+  //       stream.on('error', done)
+  //       stream.on('end', () => {
+  //         if (hash.digest('hex') === _100kbmd5) return done()
+  //         done(new Error('content mismatch'))
+  //       })
+  //     })
+  //   })
+
+  //   step(`putObject(bucketName, objectName, stream, metaData)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, stream:100kb_, metaData:{}`, done => {
+  //     client.putObject(bucketName, _100kbObjectBufferName, _100kb, {})
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:0, length=1024_`, done => {
+  //     client.getPartialObject(bucketName, _100kbObjectBufferName, 0, 1024)
+  //       .then(stream => {
+  //         stream.on('data', function() {})
+  //         stream.on('end', done)
+  //       })
+  //       .catch(done)
+  //   })
+
+  //   step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:1024, length=1024_`, done => {
+  //     var expectedHash = crypto.createHash('md5').update(_100kb.slice(1024,2048)).digest('hex')
+  //     var hash = crypto.createHash('md5')
+  //     client.getPartialObject(bucketName, _100kbObjectBufferName, 1024, 1024)
+  //       .then(stream => {
+  //         stream.on('data', data => hash.update(data))
+  //         stream.on('end', () => {
+  //           if (hash.digest('hex') === expectedHash) return done()
+  //           done(new Error('content mismatch'))
+  //         })
+  //       })
+  //       .catch(done)
+  //   })
+
+  //   step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}, offset:1024`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     client.getPartialObject(bucketName, _100kbObjectBufferName, 1024)
+  //       .then(stream => {
+  //         stream.on('data', data => hash.update(data))
+  //         stream.on('end', () => {
+  //           if (hash.digest('hex') === _100kb1kboffsetmd5) return done()
+  //           done(new Error('content mismatch'))
+  //         })
+  //       })
+  //       .catch(done)
+  //   })
+
+  //   step(`getObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_100kbObjectBufferName}_`, done => {
+  //     client.getObject(bucketName, _100kbObjectBufferName)
+  //       .then(stream => {
+  //         stream.on('data', function() {})
+  //         stream.on('end', done)
+  //       })
+  //       .catch(done)
+  //   })
+
+  //   step(`putObject(bucketName, objectName, stream, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
+  //     var stream = readableStream(_65mb)
+  //     client.putObject(bucketName, _65mbObjectName, stream, () => {
+  //       setTimeout(() => {
+  //         if (Object.values(httpAgent.sockets).length === 0) return done()
+  //         done(new Error('http request did not release network socket'))
+  //       }, 0)
+  //     })
+  //   })
+
+  //   step(`getObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     client.getObject(bucketName, _65mbObjectName, (e, stream) => {
+  //       if (e) return done(e)
+  //       stream.on('data', data => hash.update(data))
+  //       stream.on('error', done)
+  //       stream.on('end', () => {
+  //         if (hash.digest('hex') === _65mbmd5) return done()
+  //         done(new Error('content mismatch'))
+  //       })
+  //     })
+  //   })
+
+  //   step(`getObject(bucketName, objectName, cb)_bucketName:${bucketName} non-existent object`, done => {
+  //     client.getObject(bucketName, 'an-object-that-does-not-exist', (e, stream) => {
+  //       if (stream) return done(new Error("on errors the stream object should not exist"))
+  //       if (!e) return done(new Error("expected an error object"))
+  //       if (e.code !== 'NoSuchKey') return done(new Error("expected NoSuchKey error"))
+  //       done()
+  //     })
+  //   })
+
+  //   step(`getPartialObject(bucketName, objectName, offset, length, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}, offset:0, length:100*1024_`, done => {
+  //     var hash = crypto.createHash('md5')
+  //     var expectedHash = crypto.createHash('md5').update(_65mb.slice(0,100*1024)).digest('hex')
+  //     client.getPartialObject(bucketName, _65mbObjectName, 0, 100*1024, (e, stream) => {
+  //       if (e) return done(e)
+  //       stream.on('data', data => hash.update(data))
+  //       stream.on('error', done)
+  //       stream.on('end', () => {
+  //         if (hash.digest('hex') === expectedHash) return done()
+  //         done(new Error('content mismatch'))
+  //       })
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, cb)_bucketName:${bucketName}, objectName:${_65mbObjectNameCopy}, srcObject:/${bucketName}/${_65mbObjectName}_`, done => {
+  //     client.copyObject(bucketName, _65mbObjectNameCopy, "/" + bucketName + "/" + _65mbObjectName, (e) => {
+  //       if (e) return done(e)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject)_bucketName:${bucketName}, objectName:${_65mbObjectNameCopy}, srcObject:/${bucketName}/${_65mbObjectName}_`, done => {
+  //     client.copyObject(bucketName, _65mbObjectNameCopy, "/" + bucketName + "/" + _65mbObjectName)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
+  //     client.statObject(bucketName, _65mbObjectName, (e, stat) => {
+  //       if (e) return done(e)
+  //       if (stat.size !== _65mb.length) return done(new Error('size mismatch'))
+  //       done()
+  //     })
+  //   })
+
+  //   step(`statObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
+  //     client.statObject(bucketName, _65mbObjectName)
+  //       .then(stat => {
+  //         if (stat.size !== _65mb.length)
+  //           return done(new Error('size mismatch'))
+  //       })
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`removeObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     client.removeObject(bucketName, _100kbObjectName)
+  //       .then(function() {
+  //         async.map([_100kbObjectBufferName, _65mbObjectName, _65mbObjectNameCopy], (objectName, cb) => client.removeObject(bucketName, objectName, cb), done)
+  //       })
+  //       .catch(done)
+  //   })
+
+  // })
+
+  // describe('tests for copyObject statObject', function() {
+  //   var etag
+  //   var modifiedDate
+  //   step(`putObject(bucketName, objectName, stream, metaData, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}, stream: 100kb, metaData:${metaData}_`, done => {
+  //     client.putObject(bucketName, _100kbObjectName, _100kb, metaData, done)
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}_`, done => {
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, (e) => {
+  //       if (e) return done(e)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectName}_`, done => {
+  //     client.statObject(bucketName, _100kbObjectName, (e, stat) => {
+  //       if (e) return done(e)
+  //       if (stat.size !== _100kb.length) return done(new Error('size mismatch'))
+  //       assert.equal(stat.metaData['content-type'], metaData['Content-Type'])
+  //       assert.equal(stat.metaData['Testing'], metaData['Testing'])
+  //       assert.equal(stat.metaData['randomstuff'], metaData['randomstuff'])
+  //       etag = stat.etag
+  //       modifiedDate = stat.modifiedDate
+  //       done()
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:ExceptIncorrectEtag_`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setMatchETagExcept('TestEtag')
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
+  //       if (e) return done(e)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:ExceptCorrectEtag_`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setMatchETagExcept(etag)
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
+  //       .then(() => {
+  //         done(new Error("CopyObject should have failed."))
+  //       })
+  //       .catch(() => done())
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:MatchCorrectEtag_`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setMatchETag(etag)
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
+  //       if (e) return done(e)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:MatchIncorrectEtag_`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setMatchETag('TestETag')
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
+  //       .then(() => {
+  //         done(new Error("CopyObject should have failed."))
+  //       })
+  //       .catch(() => done())
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:Unmodified since ${modifiedDate}`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setUnmodified(new Date(modifiedDate))
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds, (e) => {
+  //       if (e) return done(e)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`copyObject(bucketName, objectName, srcObject, conditions, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}, srcObject:/${bucketName}/${_100kbObjectName}, conditions:Unmodified since 2010-03-26T12:00:00Z_`, done => {
+  //     var conds = new minio.CopyConditions()
+  //     conds.setUnmodified(new Date("2010-03-26T12:00:00Z"))
+  //     client.copyObject(bucketName, _100kbObjectNameCopy, "/" + bucketName + "/" + _100kbObjectName, conds)
+  //       .then(() => {
+  //         done(new Error("CopyObject should have failed."))
+  //       })
+  //       .catch(() => done())
+  //   })
+
+  //   step(`statObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}_`, done => {
+  //     client.statObject(bucketName, _100kbObjectNameCopy, (e, stat) => {
+  //       if (e) return done(e)
+  //       if (stat.size !== _100kb.length) return done(new Error('size mismatch'))
+  //       done()
+  //     })
+  //   })
+
+  //   step(`removeObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_100kbObjectNameCopy}_`, done => {
+  //     async.map([_100kbObjectName, _100kbObjectNameCopy], (objectName, cb) => client.removeObject(bucketName, objectName, cb), done)
+  //   })
+
+  // })
+
+  // describe('listIncompleteUploads removeIncompleteUpload', () => {
+  //   step(`initiateNewMultipartUpload(bucketName, objectName, metaData, cb)_bucketName:${bucketName}, objectName:${_65mbObjectName}, metaData:${metaData}`, done => {
+  //     client.initiateNewMultipartUpload(bucketName, _65mbObjectName, metaData, done)
+  //   })
+  //   step(`listIncompleteUploads(bucketName, prefix, recursive)_bucketName:${bucketName}, prefix:${_65mbObjectName}, recursive: true_`, function(done) {
+  //     // MinIO's ListIncompleteUploads returns an empty list, so skip this on non-AWS.
+  //     // See: https://github.com/minio/minio/commit/75c43bfb6c4a2ace
+  //     if (!client.host.includes('s3.amazonaws.com')) {
+  //       this.skip()
+  //     }
+
+  //     var found = false
+  //     client.listIncompleteUploads(bucketName, _65mbObjectName, true)
+  //       .on('error', e => done(e))
+  //       .on('data', data => {
+  //         if (data.key === _65mbObjectName) found = true
+  //       })
+  //       .on('end', () => {
+  //         if (found) return done()
+  //         done(new Error(`${_65mbObjectName} not found during listIncompleteUploads`))
+  //       })
+  //   })
+  //   step(`listIncompleteUploads(bucketName, prefix, recursive)_bucketName:${bucketName}, recursive: true_`, function(done) {
+  //     // MinIO's ListIncompleteUploads returns an empty list, so skip this on non-AWS.
+  //     // See: https://github.com/minio/minio/commit/75c43bfb6c4a2ace
+  //     if (!client.host.includes('s3.amazonaws.com')) {
+  //       this.skip()
+  //     }
+
+  //     var found = false
+  //     client.listIncompleteUploads(bucketName, "", true)
+  //       .on('error', e => done(e))
+  //       .on('data', data => {
+  //         if (data.key === _65mbObjectName) found = true
+  //       })
+  //       .on('end', () => {
+  //         if (found) return done()
+  //         done(new Error(`${_65mbObjectName} not found during listIncompleteUploads`))
+  //       })
+  //   })
+  //   step(`removeIncompleteUploads(bucketName, prefix)_bucketName:${bucketName}, prefix:${_65mbObjectName}_`, done => {
+  //     client.removeIncompleteUpload(bucketName, _65mbObjectName)
+  //       .then(done)
+  //       .catch(done)
+  //   })
+  // })
+
+  // describe('fPutObject fGetObject', function() {
+  //   var tmpFileUpload = `${tmpDir}/${_65mbObjectName}`
+  //   var tmpFileDownload = `${tmpDir}/${_65mbObjectName}.download`
+
+  //   step(`fPutObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}_`, done => {
+  //     fs.writeFileSync(tmpFileUpload, _65mb)
+  //     client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload, () => {
+  //       setTimeout(() => {
+  //         if (Object.values(httpAgent.sockets).length === 0) return done()
+  //         done(new Error('http request did not release network socket'))
+  //       }, 0)
+  //     })
+  //   })
+
+  //   step(`fPutObject(bucketName, objectName, filePath, metaData, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}, metaData: ${metaData}_`, done => client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload, metaData, done))
+  //   step(`fGetObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileDownload}_`, done => {
+  //     client.fGetObject(bucketName, _65mbObjectName, tmpFileDownload)
+  //       .then(() => {
+  //         var md5sum = crypto.createHash('md5').update(fs.readFileSync(tmpFileDownload)).digest('hex')
+  //         if (md5sum === _65mbmd5) return done()
+  //         return done(new Error('md5sum mismatch'))
+  //       })
+  //       .catch(done)
+  //   })
+
+  //   step(`removeObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, done => {
+  //     fs.unlinkSync(tmpFileDownload)
+  //     client.removeObject(bucketName, _65mbObjectName)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`fPutObject(bucketName, objectName, filePath, metaData)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileUpload}_`, done => {
+  //     client.fPutObject(bucketName, _65mbObjectName, tmpFileUpload)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`fGetObject(bucketName, objectName, filePath)_bucketName:${bucketName}, objectName:${_65mbObjectName}, filePath:${tmpFileDownload}_`, done => {
+  //     client.fGetObject(bucketName, _65mbObjectName, tmpFileDownload)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`removeObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_65mbObjectName}_`, (done) => {
+  //     fs.unlinkSync(tmpFileUpload)
+  //     fs.unlinkSync(tmpFileDownload)
+  //     client.removeObject(bucketName, _65mbObjectName, done)
+  //   })
+  // })
+
+  // describe('fGetObject-resume', () => {
+  //   var localFile = `${tmpDir}/${_5mbObjectName}`
+  //   var etag = ''
+  //   step(`putObject(bucketName, objectName, stream, metaData, cb)_bucketName:${bucketName}, objectName:${_5mbObjectName}, stream:5mb_`, done => {
+  //     var stream = readableStream(_5mb)
+  //     client.putObject(bucketName, _5mbObjectName, stream, _5mb.length, {})
+  //       .then((resp) => {
+  //         etag = resp
+  //         done()
+  //       })
+  //       .catch(done)
+  //   })
+  //   step(`fGetObject(bucketName, objectName, filePath, callback)_bucketName:${bucketName}, objectName:${_5mbObjectName}, filePath:${localFile}`, done => {
+  //     var bufPart = Buffer.alloc(_100kb.length)
+  //     _5mb.copy(bufPart, 0, 0, _100kb.length)
+  //     var tmpFile = `${tmpDir}/${_5mbObjectName}.${etag}.part.minio`
+  //     // create a partial file
+  //     fs.writeFileSync(tmpFile, bufPart)
+  //     client.fGetObject(bucketName, _5mbObjectName, localFile)
+  //       .then(() => {
+  //         var md5sum = crypto.createHash('md5').update(fs.readFileSync(localFile)).digest('hex')
+  //         if (md5sum === _5mbmd5) return done()
+  //         return done(new Error('md5sum mismatch'))
+  //       })
+  //       .catch(done)
+  //   })
+  //   step(`removeObject(bucketName, objectName, callback)_bucketName:${bucketName}, objectName:${_5mbObjectName}_`, done => {
+  //     fs.unlinkSync(localFile)
+  //     client.removeObject(bucketName, _5mbObjectName, done)
+  //   })
+  // })
+
+  // describe('bucket policy', () => {
+  //   let policy = `{"Version":"2012-10-17","Statement":[{"Action":["s3:GetBucketLocation","s3:ListBucket"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::${bucketName}"],"Sid":""},{"Action":["s3:GetObject"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::${bucketName}/*"],"Sid":""}]}`
+
+  //   step(`setBucketPolicy(bucketName, bucketPolicy, cb)_bucketName:${bucketName}, bucketPolicy:${policy}_`, done => {
+  //     client.setBucketPolicy(bucketName, policy, err => {
+  //       if (err && err.code == 'NotImplemented') return done()
+  //       if (err) return done(err)
+  //       done()
+  //     })
+  //   })
+
+  //   step(`getBucketPolicy(bucketName, cb)_bucketName:${bucketName}_`, done => {
+  //     client.getBucketPolicy(bucketName, (err, response) => {
+  //       if (err && err.code == 'NotImplemented') return done()
+  //       if (err) return done(err)
+  //       if (!response) {
+  //         return done(new Error(`policy is empty`))
+  //       }
+  //       done()
+  //     })
+  //   })
+  // })
+
+  // describe('presigned operations', () => {
+  //   step(`presignedPutObject(bucketName, objectName, expires, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires: 1000_`, done => {
+  //     client.presignedPutObject(bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'PUT'
+  //       options.headers = {
+  //         'content-length': _1byte.length
+  //       }
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done())
+  //         response.on('data', () => {})
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.write(_1byte)
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedPutObject(bucketName, objectName, expires)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:-123_`, done => {
+  //     // negative values should trigger an error
+  //     client.presignedPutObject(bucketName, _1byteObjectName, -123)
+  //       .then(() => {
+  //         done(new Error('negative values should trigger an error'))
+  //       })
+  //       .catch(() => done())
+  //   })
+
+  //   step(`presignedPutObject(bucketName, objectName)_bucketName:${bucketName}, objectName:${_1byteObjectName}_`, done => {
+  //     // Putting the same object should not cause any error
+  //     client.presignedPutObject(bucketName, _1byteObjectName)
+  //       .then(() => done())
+  //       .catch(done)
+  //   })
+
+  //   step(`presignedGetObject(bucketName, objectName, expires, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
+  //     client.presignedGetObject(bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         var error = null
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done(error))
+  //         response.on('data', (data) => {
+  //           if (data.toString() !== _1byte.toString()) {
+  //             error = new Error('content mismatch')
+  //           }
+  //         })
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:GET, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
+  //     client.presignedUrl('GET', bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         var error = null
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done(error))
+  //         response.on('data', (data) => {
+  //           if (data.toString() !== _1byte.toString()) {
+  //             error = new Error('content mismatch')
+  //           }
+  //         })
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:GET, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:86400, requestDate:StartOfDay_`, done => {
+  //     var requestDate = new Date()
+  //     requestDate.setHours(0,0,0,0)
+  //     client.presignedUrl('GET', bucketName, _1byteObjectName, 86400, requestDate, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         var error = null
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done(error))
+  //         response.on('data', (data) => {
+  //           if (data.toString() !== _1byte.toString()) {
+  //             error = new Error('content mismatch')
+  //           }
+  //         })
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedGetObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}_`, done => {
+  //     client.presignedGetObject(bucketName, _1byteObjectName, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         var error = null
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done(error))
+  //         response.on('data', (data) => {
+  //           if (data.toString() !== _1byte.toString()) {
+  //             error = new Error('content mismatch')
+  //           }
+  //         })
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedGetObject(bucketName, objectName, expires)_bucketName:${bucketName}, objectName:this.does.not.exist, expires:2938_`, done => {
+  //     client.presignedGetObject(bucketName, 'this.does.not.exist', 2938)
+  //       .then(assert.fail)
+  //       .catch(() => done())
+  //   })
+
+  //   step(`presignedGetObject(bucketName, objectName, expires, respHeaders, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
+  //     var respHeaders = {
+  //       'response-content-type': 'text/html',
+  //       'response-content-language': 'en',
+  //       'response-expires': 'Sun, 07 Jun 2020 16:07:58 GMT',
+  //       'response-cache-control': 'No-cache',
+  //       'response-content-disposition': 'attachment; filename=testing.txt',
+  //       'response-content-encoding': 'gzip'
+  //     }
+  //     client.presignedGetObject(bucketName, _1byteObjectName, 1000, respHeaders, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on get : ${response.statusCode}`))
+  //         if (respHeaders['response-content-type'] != response.headers['content-type']) {
+  //           return done(new Error(`content-type header mismatch`))
+  //         }
+  //         if (respHeaders['response-content-language'] != response.headers['content-language']) {
+  //           return done(new Error(`content-language header mismatch`))
+  //         }
+  //         if (respHeaders['response-expires'] != response.headers['expires']) {
+  //           return done(new Error(`expires header mismatch`))
+  //         }
+  //         if (respHeaders['response-cache-control'] != response.headers['cache-control']) {
+  //           return done(new Error(`cache-control header mismatch`))
+  //         }
+  //         if (respHeaders['response-content-disposition'] != response.headers['content-disposition']) {
+  //           return done(new Error(`content-disposition header mismatch`))
+  //         }
+  //         if (respHeaders['response-content-encoding'] != response.headers['content-encoding']) {
+  //           return done(new Error(`content-encoding header mismatch`))
+  //         }
+  //         response.on('data', () => {})
+  //         done()
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedGetObject(bucketName, objectName, cb)_bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:86400, requestDate:StartOfDay_`, done => {
+  //     var requestDate = new Date()
+  //     requestDate.setHours(0,0,0,0)
+  //     client.presignedGetObject(bucketName, _1byteObjectName, 86400, {}, requestDate, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         var error = null
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done(error))
+  //         response.on('data', (data) => {
+  //           if (data.toString() !== _1byte.toString()) {
+  //             error = new Error('content mismatch')
+  //           }
+  //         })
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+
+  //   step('presignedPostPolicy(postPolicy, cb)_postPolicy:expiresin10days_', done => {
+  //     var policy = client.newPostPolicy()
+  //     policy.setKey(_1byteObjectName)
+  //     policy.setBucket(bucketName)
+  //     var expires = new Date
+  //     expires.setSeconds(24 * 60 * 60 * 10)
+  //     policy.setExpires(expires)
+
+  //     client.presignedPostPolicy(policy, (e, data) => {
+  //       if (e) return done(e)
+  //       var req = superagent.post(data.postURL)
+  //       _.each(data.formData, (value, key) => req.field(key, value))
+  //       req.attach('file', Buffer.from([_1byte]), 'test')
+  //       req.end(function(e) {
+  //         if (e) return done(e)
+  //         done()
+  //       })
+  //       req.on('error', e => done(e))
+  //     })
+  //   })
+
+  //   step('presignedPostPolicy(postPolicy)_postPolicy: null_', done => {
+  //     client.presignedPostPolicy(null)
+  //       .then(() => {
+  //         done(new Error('null policy should fail'))
+  //       })
+  //       .catch(() => done())
+  //   })
+
+  //   step(`presignedUrl(httpMethod, bucketName, objectName, expires, reqParams, cb)_httpMethod:GET, bucketName:${bucketName}, expires:1000_`, done => {
+  //     client.presignedUrl('GET', bucketName, '', 1000, {'prefix': 'data', 'max-keys': 1000}, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'GET'
+  //       options.headers = {
+  //       }
+  //       var str = ''
+  //       if (options.protocol === 'https:') transport = https
+  //       var callback = function (response) {
+  //         if (response.statusCode !== 200) return done(new Error(`error on put : ${response.statusCode}`))
+  //         response.on('error', e => done(e))
+  //         response.on('end', function () {
+  //           if (!str.match(`<Key>${_1byteObjectName}</Key>`)) {
+  //             return done(new Error('Listed object does not match the object in the bucket!'))
+  //           }
+  //           done()
+  //         })
+  //         response.on('data', function (chunk) {
+  //           str += chunk
+  //         })
+  //       }
+  //       var request = transport.request(options, callback)
+  //       request.end()
+  //     })
+  //   })
+
+  //   step(`presignedUrl(httpMethod, bucketName, objectName, expires, cb)_httpMethod:DELETE, bucketName:${bucketName}, objectName:${_1byteObjectName}, expires:1000_`, done => {
+  //     client.presignedUrl('DELETE', bucketName, _1byteObjectName, 1000, (e, presignedUrl) => {
+  //       if (e) return done(e)
+  //       var transport = http
+  //       var options = _.pick(url.parse(presignedUrl), ['hostname', 'port', 'path', 'protocol'])
+  //       options.method = 'DELETE'
+  //       options.headers = {
+  //       }
+  //       if (options.protocol === 'https:') transport = https
+  //       var request = transport.request(options, (response) => {
+  //         if (response.statusCode !== 204) return done(new Error(`error on put : ${response.statusCode}`))
+  //         response.on('error', e => done(e))
+  //         response.on('end', () => done())
+  //         response.on('data', () => {})
+  //       })
+  //       request.on('error', e => done(e))
+  //       request.end()
+  //     })
+  //   })
+  // })
 
   describe('listObjects', function() {
     var listObjectPrefix = 'miniojsPrefix'
@@ -1069,6 +1069,7 @@ describe('functional tests', function() {
     })
 
     step(`listObjects(bucketName, prefix, recursive)_bucketName:${bucketName}, recursive:false_`, done => {
+      listArray = []
       client.listObjects(bucketName, '', false)
         .on('error', done)
         .on('end', () => {
